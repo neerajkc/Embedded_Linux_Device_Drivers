@@ -15,6 +15,31 @@
 
 #define MAX_DEVICES 10
 
+enum pcdev_names
+{
+	PCDEVA1X,
+	PCDEVB1X,
+	PCDEVC1X,
+	PCDEVD1X
+};
+
+struct device_config 
+{
+	int config_item1;
+	int config_item2;
+};
+
+
+/* Configuration data of the driver for devices */
+struct device_config pcdev_config[] = 
+{
+	[PCDEVA1X] = {.config_item1 = 60, .config_item2 = 21},
+	[PCDEVB1X] = {.config_item1 = 50, .config_item2 = 22},
+	[PCDEVC1X] = {.config_item1 = 40, .config_item2 = 23},
+	[PCDEVD1X] = {.config_item1 = 30, .config_item2 = 24}
+	
+};
+
 /* Device private data structure */
 struct pcdev_private_data
 {
@@ -270,7 +295,8 @@ int pcd_platform_driver_probe(struct platform_device *pdev)
 	pr_info("Device size = %d\n", dev_data->pdata.size);
 	pr_info("Device permission = %d\n", dev_data->pdata.perm);
 
-
+	pr_info("Config item 1 = %d\n", pcdev_config[pdev->id_entry->driver_data].config_item1 );
+	pr_info("Config item 2 = %d\n", pcdev_config[pdev->id_entry->driver_data].config_item2 );
 
 	/* 3. Dynamically allocate memory for the device buffer using size 
 	information from the platform data */
@@ -324,10 +350,10 @@ out:
 
 struct platform_device_id pcdevs_ids[] = 
 {
-	[0] = {.name = "pcdev-A1x"},
-	[1] = {.name = "pcdev-B1x"},
-	[2] = {.name = "pcdev-C1x"},
-	[3] = {.name = "pcdev-D1x"},
+	[0] = {.name = "pcdev-A1x", .driver_data = PCDEVA1X},
+	[1] = {.name = "pcdev-B1x", .driver_data = PCDEVB1X},
+	[2] = {.name = "pcdev-C1x", .driver_data = PCDEVC1X},
+	[3] = {.name = "pcdev-D1x", .driver_data = PCDEVD1X},
 	{ } /*Null termination */
 };
 

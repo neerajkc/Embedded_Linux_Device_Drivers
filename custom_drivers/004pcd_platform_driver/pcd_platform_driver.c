@@ -269,19 +269,17 @@ int pcd_platform_driver_probe(struct platform_device *pdev)
 	pr_info("A device is detected\n");
 	
 	/* 1. Get the platform data */
-	pdata = (struct pcdev_platform_data*)dev_get_platdata(&pdev->dev); // same as pdata = pdata->dev.platform_data;
+	pdata = (struct pcdev_platform_data*)dev_get_platdata(&pdev->dev); // same as pdata = pdev->dev.platform_data;
 	if(!pdata){
 		pr_info("No platform data available\n");
-		ret = -EINVAL;
-		goto out;
+		return -EINVAL;
 	}
 
 	/* 2. Dynamically allocate memory for the device private data  */
 	dev_data = devm_kzalloc(&pdev->dev, sizeof(*dev_data), GFP_KERNEL);
 	if(!dev_data){
 		pr_info("Cannot allocate memory \n");
-		ret = -ENOMEM;
-		goto out;
+		return -ENOMEM;
 	}
 
 	/* Save the device private data pointer in platform device structure */
@@ -303,8 +301,7 @@ int pcd_platform_driver_probe(struct platform_device *pdev)
 	dev_data->buffer = devm_kzalloc(&pdev->dev, dev_data->pdata.size, GFP_KERNEL);
 	if(!dev_data->buffer){
 		pr_info("Cannot allocate memory \n");
-		ret = -ENOMEM;
-		goto dev_data_free;
+		return -ENOMEM;
 	}
 	
 	/* 4. Get the device number */
@@ -317,7 +314,7 @@ int pcd_platform_driver_probe(struct platform_device *pdev)
 	ret = cdev_add(&dev_data->cdev, dev_data->dev_num, 1);
 	if(ret < 0){
 		pr_err("Cdev add failed\n");
-		goto buffer_free;
+		return ret;
 	}
 	
 	/* 6. Create device file for the detected platform device */
@@ -325,7 +322,8 @@ int pcd_platform_driver_probe(struct platform_device *pdev)
 	if(IS_ERR(pcdrv_data.device_pcd)){
 		pr_err("Device create failed\n");
 		ret = PTR_ERR(pcdrv_data.device_pcd);
-		goto cdev_del;
+		cdev_del(&dev_data->cdev);
+		return ret;
 	}
 	
 	pcdrv_data.total_devices++;
@@ -333,17 +331,6 @@ int pcd_platform_driver_probe(struct platform_device *pdev)
 	pr_info("Probe was successful\n");
 	
 	return 0;
-
-/* 7. Error handling */
-cdev_del:
-	cdev_del(&dev_data->cdev);
-buffer_free:
-	devm_kfree(&pdev->dev, dev_data->buffer);
-dev_data_free:
-	devm_kfree(&pdev->dev, dev_data);
-out:
-	pr_info("Device probe failed\n");
-	return ret;
 
 }
 

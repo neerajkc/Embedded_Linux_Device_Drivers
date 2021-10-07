@@ -1,0 +1,30 @@
+/ {
+	pcdev-1 {
+		compatible = "pcdev-E1x","pcdev-A1x";
+		nkc,size = <512>;
+		nkc,device-serial-num = "PCDEV1ABC123";
+		nkc,perm= <0x11>;
+	};
+	
+	pcdev-2 {
+
+		compatible = "pcdev-B1x";
+		nkc,size = <1024>;
+		nkc,device-serial-num = "PCDEV2ABC456";
+		nkc,perm= <0x11>;
+	};
+
+	pcdev-3 {
+		compatible = "pcdev-C1x";
+		nkc,size = <256>;
+		nkc,device-serial-num = "PCDEV3ABC789";
+		nkc,perm= <0x11>;
+	};
+
+	pcdev-4 {
+		compatible = "pcdev-D1x";
+		nkc,size = <2048>;
+		nkc,device-serial-num = "PCDEV4ABC000";
+		nkc,perm= <0x11>;
+	};
+};

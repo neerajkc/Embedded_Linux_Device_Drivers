@@ -298,6 +298,9 @@ struct pcdev_platform_data *pcdev_get_platdata_from_dt(struct device *dev)
 
 }
 
+
+struct of_device_id nkc_pcdev_dt_match[];
+
 /* Called when matched platform device is found */
 int pcd_platform_driver_probe(struct platform_device *pdev)
 {
@@ -310,30 +313,34 @@ int pcd_platform_driver_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	
 	int driver_data;
+	
+	/* Used to store matched entry from the 'of_device_id' list of this driver */
+	const struct of_device_id *match;
 
 	dev_info(dev, "A device is detected\n");
 	
-	pdata = pcdev_get_platdata_from_dt(dev);
+	/* match will always be NULL if LINUX does not support device tree, i.e CONFIG_OF is off */
+	match = of_match_device(of_match_ptr(nkc_pcdev_dt_match), dev);
 	
-	if(IS_ERR(pdata))
-		return PTR_ERR(pdata);
-	
-	if(!pdata)
+	/* Get platform data */
+	if(match)
+	{
+		pdata = pcdev_get_platdata_from_dt(dev);
+		if(IS_ERR(pdata))
+			return PTR_ERR(pdata);
+		driver_data = (int)match->data;
+	} else 
 	{
 		/* 1. No platform data available from device tree. Get it from device setup */
 		pdata = (struct pcdev_platform_data*)dev_get_platdata(dev); // same as pdata = pdev->dev.platform_data;
-		if(!pdata){
-			dev_info(dev, "No platform data available\n");
-			return -EINVAL;
-		}
-		
 		driver_data = pdev->id_entry->driver_data;
-	} else
-		driver_data = (int) of_device_get_match_data(dev);
-		/* same as:
-		match = of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
-		driver_data = (int)match->data; 
-		*/
+	}
+		
+	if(!pdata)
+	{
+		dev_info(dev, "No platform data available\n");
+		return -EINVAL;
+	}
 
 	/* 2. Dynamically allocate memory for the device private data  */
 	dev_data = devm_kzalloc(&pdev->dev, sizeof(*dev_data), GFP_KERNEL);
@@ -343,7 +350,7 @@ int pcd_platform_driver_probe(struct platform_device *pdev)
 	}
 
 	/* Save the device private data pointer in platform device structure */
-	dev_set_drvdata(&pdev->dev,dev_data); // same as pdev->dev.driver_data = dev_data;
+	dev_set_drvdata(&pdev->dev, dev_data); // same as pdev->dev.driver_data = dev_data;
 	
 	dev_data->pdata.size = pdata->size;
 	dev_data->pdata.perm = pdata->perm;
@@ -423,7 +430,7 @@ struct platform_driver pcd_platform_driver =
 	.id_table = pcdevs_ids,
 	.driver = {
 		.name = "pseudo-char-device",
-		.of_match_table = nkc_pcdev_dt_match
+		.of_match_table = of_match_ptr(nkc_pcdev_dt_match)
 	}
 
 };
